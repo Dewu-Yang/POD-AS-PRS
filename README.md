@@ -1,6 +1,6 @@
 # POD-AS-PRS
 
-> **A modular Python framework for data-driven reduced-order modelling of CFD flows**
+> **A modular Python framework for sensitivity-driven dimensionality reduction and high-fidelity reconstruction of CFD flows. This tool identifies sensitivity-dominant POD modes through Active Subspace analysis to build low-dimensional, physically interpretable manifolds**
 >
 > POD → ResNet → Active Subspaces → Polynomial Response Surface
 
