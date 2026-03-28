@@ -23,7 +23,7 @@ high-fidelity flow-field snapshots.
 |:----:|--------|--------|------|
 | 1 | `core/pod_engine.py` | **Proper Orthogonal Decomposition** | Compress flow snapshots into a low-dimensional POD coefficient vector via truncated SVD |
 | 2 | `core/resnet_model.py` · `resnet_trainer.py` | **Residual Network (ResNet)** | Learn the nonlinear map POD coefficients → scalar QoI |
-| 3 | `core/gradient_analysis.py` | **Autograd / FD gradients** | Compute ∂QoI/∂POD via automatic differentiation; validate against finite-difference |
+| 3 | `core/gradient_analysis.py` | **AD / FD gradients** | Compute ∂QoI/∂POD via automatic differentiation; validate against finite-difference |
 | 4 | `lib/active_subspaces/` | **Active Subspaces (AS)** | Identify the dominant low-dimensional input subspace via gradient covariance eigendecomposition |
 | 5 | `lib/.../utils/rs.py` | **Polynomial Response Surface (PRS)** | Fit a polynomial surrogate in the compressed active-variable space |
 
