@@ -1,0 +1,11 @@
+numpy==1.26.4
+scipy==1.15.1
+matplotlib==3.10.3
+torch==2.2.0
+scikit-learn==1.4.2
+pandas==1.5.3
+seaborn==0.13.2
+tqdm==4.66.5
+jupyter==1.0.0
+ipykernel==6.29.5
+pymech==2.0.1

@@ -1,0 +1,20 @@
+# Legacy code (excluded per project policy)
+legacy/
+
+# Raw simulation data (too large for GitHub, >GB each)
+data/
+
+# Large POD cache files (GB-scale npz)
+results/*/POD/pod_data.npz
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
