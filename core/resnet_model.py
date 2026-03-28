@@ -1,23 +1,10 @@
-"""
-Residual Network (ResNet) model for mapping POD coefficients to a scalar QoI.
-
-All variants use fully-connected (linear) layers and are suitable for
-flat 1-D POD coefficient vectors.
-"""
 
 import torch
 import torch.nn as nn
 
 
 class ResidualBlock(nn.Module):
-    """A single fully-connected residual block.
-
-    Parameters
-    ----------
-    features : int
-        Number of input (and output) features for both linear layers.
-    """
-
+    
     def __init__(self, features):
         super(ResidualBlock, self).__init__()
         self.block = nn.Sequential(
@@ -39,20 +26,7 @@ class ResidualBlock(nn.Module):
 
 
 class ResNet(nn.Module):
-    """Fully-connected ResNet for scalar regression from POD coefficients.
-
-    Parameters
-    ----------
-    input_size : int
-        Number of input POD coefficients.
-    hidden_size : int, optional
-        Width of the hidden representation (default 128).
-    num_blocks : int, optional
-        Number of residual blocks (default 6).
-    dropout_rate : float, optional
-        Dropout probability in the output head (default 0.1).
-    """
-
+  
     def __init__(self, input_size, hidden_size=128, num_blocks=6, dropout_rate=0.1):
         super(ResNet, self).__init__()
 
@@ -86,21 +60,7 @@ class ResNet(nn.Module):
 
 
 def create_resnet(input_size=100, hidden_size=128, num_blocks=6):
-    """Create a ResNet model with the given architecture parameters.
-
-    Parameters
-    ----------
-    input_size : int
-        Number of input features (POD coefficients).
-    hidden_size : int
-        Hidden layer width.
-    num_blocks : int
-        Number of residual blocks.
-
-    Returns
-    -------
-    ResNet
-    """
+  
     return ResNet(input_size, hidden_size, num_blocks)
 
 

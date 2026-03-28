@@ -1,6 +1,3 @@
-"""
-Training, evaluation, and inference utilities for the POD-ResNet surrogate model.
-"""
 
 import os
 import random
@@ -33,13 +30,7 @@ plt.rcParams.update({
 
 
 def set_random_seed(seed=42):
-    """Fix all random-number generators for reproducibility.
 
-    Parameters
-    ----------
-    seed : int
-        Random seed value (default 42).
-    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -52,19 +43,7 @@ def set_random_seed(seed=42):
 
 
 def compute_metrics(y_true, y_pred):
-    """Compute regression performance metrics.
-
-    Parameters
-    ----------
-    y_true : ndarray
-        Ground-truth values.
-    y_pred : ndarray
-        Predicted values.
-
-    Returns
-    -------
-    mse, mae, r2, max_rel_error : float
-    """
+ 
     mse = mean_squared_error(y_true, y_pred)
     mae = mean_absolute_error(y_true, y_pred)
     r2 = r2_score(y_true, y_pred)
@@ -75,20 +54,7 @@ def compute_metrics(y_true, y_pred):
 
 
 def evaluate_model(model, dataloader, device, criterion):
-    """Compute average loss over a dataloader.
-
-    Parameters
-    ----------
-    model : nn.Module
-    dataloader : DataLoader
-    device : torch.device
-    criterion : loss function
-
-    Returns
-    -------
-    float
-        Mean loss value.
-    """
+ 
     model.eval()
     running_loss = 0.0
     with torch.no_grad():
@@ -112,39 +78,7 @@ def train(
     min_delta=0.0001,
     model_save_path='resnet_model.pth',
 ):
-    """Train the ResNet model with early stopping.
-
-    Parameters
-    ----------
-    model : nn.Module
-        The ResNet model to train.
-    train_loader : DataLoader
-        Training data.
-    val_loader : DataLoader
-        Validation data.
-    device : torch.device
-        Compute device.
-    num_epochs : int
-        Maximum number of training epochs (default 1000).
-    patience : int
-        Early-stopping patience in epochs (default 100).
-    lr : float
-        Initial Adam learning rate (default 0.001).
-    weight_decay : float
-        L2 regularisation coefficient for Adam (default 0.0).
-        Set to 1e-4 for NACA 4412 to match legacy train.py line 149.
-    min_delta : float
-        Minimum improvement threshold for early stopping (default 0.0001).
-    model_save_path : str
-        File path for saving the best model checkpoint.
-
-    Returns
-    -------
-    model : nn.Module
-        Model restored to the best validation checkpoint.
-    train_losses : list of float
-    val_losses : list of float
-    """
+ 
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
@@ -215,24 +149,7 @@ def load_or_train(
     model_save_path,
     **train_kwargs,
 ):
-    """Load an existing model checkpoint or train from scratch.
-
-    Parameters
-    ----------
-    model : nn.Module
-    train_loader, val_loader : DataLoader
-    device : torch.device
-    model_save_path : str
-        Path to look for (or save) the checkpoint.
-    **train_kwargs :
-        Additional keyword arguments forwarded to :func:`train`.
-
-    Returns
-    -------
-    model : nn.Module
-    train_losses, val_losses : list
-        Empty lists when a checkpoint is loaded.
-    """
+  
     if os.path.exists(model_save_path):
         print(f"\nFound existing checkpoint: {model_save_path}. Loading...")
         try:
@@ -255,22 +172,7 @@ def load_or_train(
 
 
 def compute_all_gradients(model, pod_coeffs, device, batch_size=32):
-    """Compute autograd gradients for all samples in a POD coefficient matrix.
-
-    Parameters
-    ----------
-    model : nn.Module
-        Trained ResNet.
-    pod_coeffs : ndarray
-        Raw (un-normalised) POD coefficients, shape (N, n_modes).
-    device : torch.device
-    batch_size : int
-
-    Returns
-    -------
-    ndarray
-        Gradient matrix of shape (N, n_modes).
-    """
+  
     from .gradient_analysis import compute_gradients
 
     num_features = pod_coeffs.shape[1]
@@ -309,24 +211,7 @@ def compute_all_gradients(model, pod_coeffs, device, batch_size=32):
 def evaluate_and_save_metrics(
     model, loaders, split_names, device, denorm_fn, results_dir='./results'
 ):
-    """Evaluate the model on multiple splits and save a metrics text file.
-
-    Parameters
-    ----------
-    model : nn.Module
-    loaders : list of DataLoader
-    split_names : list of str
-        E.g. ['Train', 'Validation', 'Test'].
-    device : torch.device
-    denorm_fn : callable
-        Function that converts normalised predictions back to physical units.
-    results_dir : str
-
-    Returns
-    -------
-    dict
-        Mapping from split name to (mse, mae, r2, max_rel_error).
-    """
+  
     os.makedirs(results_dir, exist_ok=True)
     model.eval()
     metrics = {}
@@ -365,15 +250,7 @@ def evaluate_and_save_metrics(
 
 
 def plot_loss_curve(train_losses, val_losses, patience, results_dir='./results'):
-    """Save training/validation loss curve.
-
-    Parameters
-    ----------
-    train_losses, val_losses : list of float
-    patience : int
-        Used to annotate the best-model and early-stopping points.
-    results_dir : str
-    """
+   
     if not (train_losses and val_losses):
         print("No training history available; skipping loss curve.")
         return
@@ -414,20 +291,7 @@ def plot_loss_curve(train_losses, val_losses, patience, results_dir='./results')
 def plot_prediction_comparison(
     y_true, y_pred, dt=0.05, t_start=0.0, qoi_label='$C_d$', results_dir='./results'
 ):
-    """Save a two-panel prediction comparison figure (time series + scatter).
-
-    Parameters
-    ----------
-    y_true, y_pred : ndarray
-        De-normalised ground-truth and predicted QoI values.
-    dt : float
-        Time step between consecutive samples.
-    t_start : float
-        Physical start time of the test sequence.
-    qoi_label : str
-        LaTeX label for the QoI (e.g. ``'$C_d$'``).
-    results_dir : str
-    """
+  
     os.makedirs(results_dir, exist_ok=True)
     time_arr = np.arange(y_true.shape[0]) * dt + t_start
 

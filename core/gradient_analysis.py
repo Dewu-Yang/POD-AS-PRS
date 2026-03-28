@@ -1,17 +1,3 @@
-"""
-Gradient analysis utilities: autograd (AD) vs. finite-difference (FD) comparison.
-
-Functions
----------
-compute_gradients                       Autograd gradient of model output w.r.t. input.
-compute_finite_diff_gradients           Central-difference gradient approximation.
-compare_gradients                       Single-sample AD vs FD comparison plot.
-compare_gradients_nature_style_dataset  Dataset-level comparison with violin + timing plots.
-visualize_gradients                     Bar chart of autograd gradient magnitudes.
-analyze_multiple_samples                Multi-sample gradient error analysis.
-test_step_sizes                         FD step-size sensitivity study.
-"""
-
 import time
 import os
 
@@ -27,24 +13,7 @@ LABEL_SIZE = 24
 
 def compute_gradients(model, pod_coeffs, target_qoi=None, device='cuda',
                       measure_time=False):
-    """Compute autograd gradient of model output w.r.t. POD coefficient input.
-
-    Parameters
-    ----------
-    model : nn.Module
-    pod_coeffs : Tensor
-        Shape (1, n_features). Must be on *device*.
-    target_qoi : Tensor, optional
-        Not used in the forward pass; kept for API consistency.
-    device : str or torch.device
-    measure_time : bool
-        If True, also return the wall-clock time.
-
-    Returns
-    -------
-    gradients : Tensor
-    elapsed : float  (only when measure_time=True)
-    """
+   
     pod_coeffs = pod_coeffs.clone().to(device)
     pod_coeffs.requires_grad_(True)
     model.eval()
@@ -70,18 +39,7 @@ def _process_inputs(X):
 
 
 def _central_difference(X, fun, h=1e-7):
-    """Central-difference gradient for a scalar-valued function *fun*.
-
-    Parameters
-    ----------
-    X : ndarray, shape (1, m)
-    fun : callable  x -> scalar
-    h : float
-
-    Returns
-    -------
-    ndarray, shape (1, m)
-    """
+   
     X_flat = X.reshape(1, -1)
     m = X_flat.shape[1]
     grad = np.zeros_like(X_flat)
@@ -97,21 +55,7 @@ def _central_difference(X, fun, h=1e-7):
 
 def compute_finite_diff_gradients(model, pod_coeffs, device, h=1e-7,
                                    measure_time=False):
-    """Central-difference gradient of the model output w.r.t. POD coefficients.
-
-    Parameters
-    ----------
-    model : nn.Module
-    pod_coeffs : Tensor, shape (1, n_features)
-    device : torch.device or str
-    h : float
-        Finite-difference step size.
-    measure_time : bool
-
-    Returns
-    -------
-    ndarray  (or (ndarray, float) when measure_time=True)
-    """
+    
     model.eval()
     X_np = pod_coeffs.clone().detach().cpu().numpy()
     input_size = model.input_layer[0].in_features
@@ -136,27 +80,7 @@ def compute_finite_diff_gradients(model, pod_coeffs, device, h=1e-7,
 
 def compare_gradients(model, pod_coeffs, target_qoi=None, device='cuda',
                       h=1e-7, max_modes=20, save_path=None):
-    """Compare AD and FD gradients for a single sample.
 
-    Produces a two-panel bar chart (gradient values + relative error) and
-    returns scalar error metrics.
-
-    Parameters
-    ----------
-    model : nn.Module
-    pod_coeffs : Tensor, shape (1, n_features)
-    target_qoi : Tensor, optional
-    device : torch.device or str
-    h : float
-        FD step size.
-    max_modes : int
-        Number of POD modes to visualise.
-    save_path : str, optional
-
-    Returns
-    -------
-    avg_rel_diff, max_rel_diff : float
-    """
     print("\nComputing autograd gradients...")
     ad_grad = compute_gradients(model, pod_coeffs, target_qoi, device)
     ad_flat = ad_grad.cpu().detach().numpy().reshape(-1)[:max_modes]
@@ -216,26 +140,7 @@ def compare_gradients_nature_style_dataset(
     model, pod_coeffs, target_qoi=None, device='cuda',
     h=1e-2, max_modes=20, save_path=None, batch_size=32
 ):
-    """Dataset-level AD vs FD comparison with violin + timing bar plots.
-
-    Parameters
-    ----------
-    model : nn.Module
-    pod_coeffs : Tensor or ndarray, shape (N, n_features)
-    target_qoi : Tensor or None
-    device : torch.device or str
-    h : float
-        FD step size.
-    max_modes : int
-    save_path : str, optional
-        Base path; ``_grad.pdf`` and ``_time.pdf`` suffixes are appended.
-    batch_size : int
-
-    Returns
-    -------
-    avg_rel_diff, max_rel_diff : float
-    timing_results : dict
-    """
+   
     model.eval()
     if isinstance(pod_coeffs, np.ndarray):
         pod_coeffs = torch.FloatTensor(pod_coeffs)
@@ -379,14 +284,7 @@ def compare_gradients_nature_style_dataset(
 
 
 def visualize_gradients(gradients, max_modes=10, save_path=None):
-    """Bar chart of autograd gradient magnitudes for a single sample.
-
-    Parameters
-    ----------
-    gradients : Tensor or ndarray
-    max_modes : int
-    save_path : str, optional
-    """
+   
     if isinstance(gradients, torch.Tensor):
         if gradients.is_cuda:
             gradients = gradients.cpu()
@@ -412,22 +310,7 @@ def visualize_gradients(gradients, max_modes=10, save_path=None):
 
 def analyze_multiple_samples(model, pod_coeffs_samples, device, h=1e-7,
                               num_samples=5, save_dir=None):
-    """Run gradient comparison on *num_samples* samples and report statistics.
-
-    Parameters
-    ----------
-    model : nn.Module
-    pod_coeffs_samples : Tensor
-        Shape (N, n_features).
-    device : torch.device or str
-    h : float
-    num_samples : int
-    save_dir : str, optional
-
-    Returns
-    -------
-    avg_errors, max_errors : list of float
-    """
+  
     num_samples = min(num_samples, len(pod_coeffs_samples))
     avg_errors, max_errors = [], []
 
@@ -450,21 +333,7 @@ def analyze_multiple_samples(model, pod_coeffs_samples, device, h=1e-7,
 
 def test_step_sizes(model, pod_coeffs, device,
                     steps=None, save_path=None):
-    """Study FD step-size sensitivity by comparing FD to AD reference.
-
-    Parameters
-    ----------
-    model : nn.Module
-    pod_coeffs : Tensor, shape (1, n_features)
-    device : torch.device or str
-    steps : list of float, optional
-        Default: [1e-3, 1e-5, 1e-7, 1e-9].
-    save_path : str, optional
-
-    Returns
-    -------
-    avg_errors, max_errors : list of float
-    """
+  
     if steps is None:
         steps = [1e-3, 1e-5, 1e-7, 1e-9]
 
