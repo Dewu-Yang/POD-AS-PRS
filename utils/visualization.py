@@ -1,5 +1,5 @@
 """
-High-level visualisation helpers for the POD-ResNet-AS-PRS workflow.
+High-level visualisation helpers for the POD-AS-PRS workflow.
 
 Functions
 ---------
@@ -20,6 +20,7 @@ import matplotlib as mpl
 from matplotlib.lines import Line2D
 import numpy as np
 from sklearn.metrics import r2_score, mean_squared_error
+import matplotlib.colors as mcolors
 
 plt.rcParams.update({
     "text.usetex": True,
@@ -425,6 +426,7 @@ def compare_rom_fom_predictions(X, y_true, model,
                                  plot_end_time=800.0,
                                  scatter_xlim=None,
                                  scatter_ylim=None,
+                                 split_idx=None,
                                  save_dir='./results/ROM_FOM_Comparison'):
     """Compare ROM (response surface) and FOM (simulation) predictions.
 
@@ -467,7 +469,7 @@ def compare_rom_fom_predictions(X, y_true, model,
     """
     os.makedirs(save_dir, exist_ok=True)
 
-    y_pred = model.predict(X)[0]
+    y_pred = model.predict(X)[0].flatten()
     r2   = r2_score(y_true, y_pred)
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
     mae  = np.mean(np.abs(y_true - y_pred))
@@ -476,9 +478,8 @@ def compare_rom_fom_predictions(X, y_true, model,
     if geometry == 'naca4412':
         # ── Figure 1: time-window + normalised-deviation PDF ─────────────────
         fig = plt.figure(figsize=(20, 4))
-        gs  = fig.add_gridspec(1, 4)
-        ax1 = fig.add_subplot(gs[0, :3])
-        ax2 = fig.add_subplot(gs[0, 3])
+        gs  = fig.add_gridspec(2, 4, hspace=0.0)
+        ax1 = fig.add_subplot(gs[:, :3])
 
         s_idx = int((plot_start_time - total_start_time) / dt)
         e_idx = int((plot_end_time   - total_start_time) / dt)
@@ -486,28 +487,73 @@ def compare_rom_fom_predictions(X, y_true, model,
         yp_sl = y_pred[s_idx:e_idx]
         t_sl  = plot_start_time + np.arange(len(yt_sl)) * dt
 
-        ax1.scatter(t_sl, yt_sl, color='black', s=50, alpha=0.7, label='FOM')
-        ax1.plot(t_sl, yp_sl, 'r--', alpha=0.6, label='ROM')
+        if split_idx is not None:
+            t_split_phys = total_start_time + split_idx * dt
+            t_train_end  = min(t_split_phys, plot_end_time)
+            t_pred_start = max(t_split_phys, plot_start_time)
+            if t_train_end > plot_start_time:
+                ax1.axvspan(plot_start_time, t_train_end, alpha=0.12, color='gray', zorder=0)
+            if t_pred_start < plot_end_time:
+                ax1.axvspan(t_pred_start, plot_end_time, alpha=0.12, color='steelblue', zorder=0)
+            if plot_start_time <= t_split_phys <= plot_end_time:
+                ax1.axvline(x=t_split_phys, color='gray', linestyle='--', linewidth=1.5)
+                span = plot_end_time - plot_start_time
+                y_top = float(yt_sl.max()) + 0.01 * (float(yt_sl.max()) - float(yt_sl.min()))
+
+
+        # ax1.scatter(t_sl, yt_sl, color='black', s=50, alpha=0.7, label='FOM')
+        ax1.plot(t_sl, yt_sl, 'k-', linewidth=2,  label='FOM')
+        ax1.plot(t_sl, yp_sl, 'r--', linewidth=2, label='ROM')
         ax1.set_xlabel(r'$t$ /($CU_\infty^{-1}$)', fontsize=24)
         ax1.set_ylabel(qoi_label, fontsize=24)
         ax1.set_xlim([plot_start_time, plot_end_time])
-        ax1.legend(prop={'size': 24})
+        # ax1.legend(prop={'size': 24})
 
         inner  = qoi_label.strip('$')
         t_norm = np.abs(y_true - np.mean(y_true)) / np.std(y_true)
         p_norm = np.abs(y_pred - np.mean(y_pred)) / np.std(y_pred)
         bins   = np.linspace(0.0, 4, 50)
-        t_hist = np.histogram(t_norm, density=True, bins=bins)
-        p_hist = np.histogram(p_norm, density=True, bins=bins)
-        ax2.plot(t_hist[1][:-1], t_hist[0], 'k-',  linewidth=2, label='FOM')
-        ax2.plot(p_hist[1][:-1], p_hist[0], 'r--', linewidth=2, label='ROM')
-        ax2.set_yscale('log')
-        ax2.set_xlim([0, 3])
-        ax2.set_xlabel(f'$|{inner}-\\mu|/\\sigma$', fontsize=24)
-        ax2.set_ylabel(r'$\rho$', fontsize=24)
-        leg2 = ax2.legend(prop={'size': 24})
-        leg2.get_frame().set_linewidth(0)
-        leg2.get_frame().set_edgecolor('none')
+
+        if split_idx is not None:
+            # ── Right panel: two stacked PDF subplots (train / test) ─────────
+            ax2_top = fig.add_subplot(gs[0, 3])
+            ax2_bot = fig.add_subplot(gs[1, 3], sharex=ax2_top)
+
+            ax2_top.set_facecolor(mcolors.to_rgba('gray', alpha=0.12))
+            ax2_bot.set_facecolor(mcolors.to_rgba('steelblue', alpha=0.12))
+
+            for ax_p, t_n, p_n, add_leg in [
+                (ax2_top, t_norm[:split_idx], p_norm[:split_idx], True),
+                (ax2_bot, t_norm[split_idx:], p_norm[split_idx:], False),
+            ]:
+                h_t = np.histogram(t_n, density=True, bins=bins)
+                h_p = np.histogram(p_n, density=True, bins=bins)
+                ax_p.plot(h_t[1][:-1], h_t[0], 'k-',  linewidth=2, label='FOM')
+                ax_p.plot(h_p[1][:-1], h_p[0], 'r--', linewidth=2, label='ROM')
+                ax_p.set_yscale('log')
+                ax_p.set_xlim([0, 3])
+                ax_p.set_ylabel(r'$\rho$', fontsize=20)
+                ax_p.tick_params(labelsize=18)
+                # if add_leg:
+                #     leg2 = ax_p.legend(prop={'size': 20}, frameon=False)
+                #     leg2.get_frame().set_linewidth(0)
+                #     leg2.get_frame().set_edgecolor('none')
+
+            plt.setp(ax2_top.get_xticklabels(), visible=False)
+            ax2_bot.set_xlabel(f'$|{inner}-\\mu|/\\sigma$', fontsize=22)
+        else:
+            ax2 = fig.add_subplot(gs[:, 3])
+            t_hist = np.histogram(t_norm, density=True, bins=bins)
+            p_hist = np.histogram(p_norm, density=True, bins=bins)
+            ax2.plot(t_hist[1][:-1], t_hist[0], 'k-',  linewidth=2, label='FOM')
+            ax2.plot(p_hist[1][:-1], p_hist[0], 'r--', linewidth=2, label='ROM')
+            ax2.set_yscale('log')
+            ax2.set_xlim([0, 3])
+            ax2.set_xlabel(f'$|{inner}-\\mu|/\\sigma$', fontsize=24)
+            ax2.set_ylabel(r'$\rho$', fontsize=24)
+            leg2 = ax2.legend(prop={'size': 24})
+            leg2.get_frame().set_linewidth(0)
+            leg2.get_frame().set_edgecolor('none')
 
         plt.tight_layout()
         plt.savefig(os.path.join(save_dir, 'rom_fom_comparison_curve.jpg'),
@@ -523,7 +569,14 @@ def compare_rom_fom_predictions(X, y_true, model,
         max_v = max(float(y_true.max()), float(y_pred.max()))
         pad   = (max_v - min_v) * 0.05
 
-        axes[0].scatter(y_true, y_pred, alpha=0.5, edgecolor='k')
+        if split_idx is not None:
+            axes[0].scatter(y_true[:split_idx], y_pred[:split_idx],
+                            alpha=0.5, edgecolor='k', color='steelblue', s=30, label='Training')
+            axes[0].scatter(y_true[split_idx:], y_pred[split_idx:],
+                            alpha=0.5, edgecolor='k', color='green', s=30, marker='^', label='Unseen Test')
+            axes[0].legend(prop={'size': 20}, frameon=False)
+        else:
+            axes[0].scatter(y_true, y_pred, alpha=0.5, edgecolor='k')
         axes[0].plot([min_v - pad, max_v + pad],
                      [min_v - pad, max_v + pad], 'r--', lw=2)
         axes[0].set_xlabel('FOM', fontsize=26)
@@ -538,7 +591,14 @@ def compare_rom_fom_predictions(X, y_true, model,
         axes[0].set_aspect('equal', adjustable='box')
 
         residuals = y_pred - y_true
-        axes[1].scatter(y_true, residuals, alpha=0.5, edgecolor='k')
+        if split_idx is not None:
+            axes[1].scatter(y_true[:split_idx], residuals[:split_idx],
+                            alpha=0.5, edgecolor='k', color='steelblue', s=30, label='Training')
+            axes[1].scatter(y_true[split_idx:], residuals[split_idx:],
+                            alpha=0.5, edgecolor='k', color='green', s=30, marker='^', label='Unseen Test')
+            axes[1].legend(prop={'size': 20}, frameon=False)
+        else:
+            axes[1].scatter(y_true, residuals, alpha=0.5, edgecolor='k')
         axes[1].axhline(y=0, color='r', linestyle='--', lw=2)
         axes[1].set_xlabel(qoi_label, fontsize=26)
         axes[1].set_ylabel('Residuals (ROM - FOM)', fontsize=26)
@@ -557,12 +617,26 @@ def compare_rom_fom_predictions(X, y_true, model,
         # ── Figure 1: full time series ───────────────────────────────────────
         time    = np.arange(y_true.shape[0]) * dt + t_start
         fig, ax = plt.subplots(figsize=(12, 6))
+
+        if split_idx is not None:
+            t_split = time[split_idx]
+            ax.axvspan(time[0], t_split, alpha=0.08, color='gray')
+            ax.axvspan(t_split, time[-1], alpha=0.08, color='steelblue')
+            ax.axvline(x=t_split, color='gray', linestyle='--', linewidth=1.5)
+            y_top = float(y_true.max()) + 0.002 * (float(y_true.max()) - float(y_true.min()))
+            # ax.text((time[0] + t_split) / 2, y_top, 'Reconstruction',
+            #         ha='center', va='bottom', fontsize=18, color='gray')
+            # ax.text((t_split + time[-1]) / 2, y_top, 'Prediction',
+                    # ha='center', va='bottom', fontsize=18, color='steelblue')
+
         ax.scatter(time, y_true, color='black', s=50, alpha=0.7, label='FOM')
+        # ax.plot(time, y_true, 'k-', linewidth=2,  label='FOM')
         ax.plot(time, y_pred, 'r--', linewidth=2, label='ROM')
         ax.set_xlabel(r'$t/(DU_{\infty}^{-1})$', fontsize=26)
         ax.set_ylabel(qoi_label, fontsize=26)
         ax.set_xlim(time[0], time[-1])
-        ax.legend(prop={'size': 24})
+        ax.tick_params(labelsize=22)
+        ax.legend(prop={'size': 24}, loc='upper left')
         plt.tight_layout()
         plt.savefig(os.path.join(save_dir, 'rom_fom_comparison_curve.jpg'),
                     dpi=650, bbox_inches='tight')
@@ -578,7 +652,14 @@ def compare_rom_fom_predictions(X, y_true, model,
         ylim  = scatter_ylim if scatter_ylim is not None else xlim
 
         plt.figure(figsize=(8, 6))
-        plt.scatter(y_true, y_pred, alpha=0.5, edgecolor='k')
+        if split_idx is not None:
+            plt.scatter(y_true[:split_idx], y_pred[:split_idx],
+                        alpha=0.5, edgecolor='k', color='steelblue', s=30, label='Training')
+            plt.scatter(y_true[split_idx:], y_pred[split_idx:],
+                        alpha=0.5, edgecolor='k', color='green', s=30, marker='^', label='Unseen Test')
+            plt.legend(prop={'size': 20}, frameon=False)
+        else:
+            plt.scatter(y_true, y_pred, alpha=0.5, edgecolor='k')
         plt.plot([xlim[0], xlim[1]], [xlim[0], xlim[1]], 'r--', lw=2)
         plt.xlabel('FOM', fontsize=26)
         plt.ylabel('ROM', fontsize=26)
@@ -597,7 +678,14 @@ def compare_rom_fom_predictions(X, y_true, model,
         # ── Figure 3: residuals ──────────────────────────────────────────────
         plt.figure(figsize=(10, 6))
         residuals = y_pred - y_true
-        plt.scatter(y_true, residuals, alpha=0.7, edgecolor='k')
+        if split_idx is not None:
+            plt.scatter(y_true[:split_idx], residuals[:split_idx],
+                        alpha=0.5, edgecolor='k', color='steelblue', s=30)
+            plt.scatter(y_true[split_idx:], residuals[split_idx:],
+                        alpha=0.5, edgecolor='k', color='green', s=30, marker='^')
+            # plt.legend(prop={'size': 20}, frameon=False)
+        else:
+            plt.scatter(y_true, residuals, alpha=0.7, edgecolor='k')
         plt.axhline(y=0, color='r', linestyle='--')
         plt.xlabel(qoi_label, fontsize=26)
         plt.ylabel('Residuals (ROM - FOM)', fontsize=26)
@@ -655,8 +743,9 @@ def plot_subspace_polynomial_heatmap(XX_as, f, eigenvecs,
     """R² heatmap over active-subspace dimension × polynomial order.
 
     For each (subspace dimension, polynomial order) pair the function trains a
-    polynomial response surface on an 80 % training split and evaluates R² on
-    the remaining 20 %.  Results are shown as a seaborn heatmap.
+    polynomial response surface on the first 80 % of samples (chronological
+    split) and evaluates R² on the remaining 20 %.  Results are shown as a
+    seaborn heatmap.
 
     Parameters
     ----------
@@ -682,7 +771,6 @@ def plot_subspace_polynomial_heatmap(XX_as, f, eigenvecs,
     """
     import seaborn as sns
     from math import comb
-    from sklearn.model_selection import train_test_split
     from sklearn.metrics import r2_score
     import lib.active_subspaces as ac
 
@@ -690,11 +778,13 @@ def plot_subspace_polynomial_heatmap(XX_as, f, eigenvecs,
 
     r2_matrix = np.full((n_dim_range, n_poly_range), np.nan)
 
+    n_total = XX_as.shape[0]
+    split   = int(0.8 * n_total)
+
     for dim in range(1, n_dim_range + 1):
         y = XX_as.dot(eigenvecs[:, :dim])
-        X_train, X_test, f_train, f_test = train_test_split(
-            y, f, test_size=0.2, random_state=42
-        )
+        X_train, X_test = y[:split], y[split:]
+        f_train, f_test = f[:split], f[split:]
         n_samples = X_train.shape[0]
 
         for poly_order in range(1, n_poly_range + 1):
@@ -713,19 +803,21 @@ def plot_subspace_polynomial_heatmap(XX_as, f, eigenvecs,
 
     valid_vals = r2_matrix[~np.isnan(r2_matrix)]
     vmin_auto = float(valid_vals.min()) if valid_vals.size > 0 else 0.0
+    vmax_auto = float(valid_vals.max()) if valid_vals.size > 0 else 1.0
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(10, 8))
     ax = sns.heatmap(
         r2_matrix,
-        annot=True, fmt='.6g', cmap='Greys',
+        annot=True, fmt='.6f', cmap='Greys',
+        annot_kws={"size": 32},
         xticklabels=range(1, n_poly_range + 1),
         yticklabels=range(1, n_dim_range + 1),
-        vmin=vmin_auto, vmax=1,
+        vmin=vmin_auto-0.001, vmax=vmax_auto,
     )
-    ax.tick_params(axis='both', labelsize=24)
-    ax.collections[0].colorbar.ax.tick_params(labelsize=24)
-    plt.xlabel('Degree of the response surface', fontsize=26)
-    plt.ylabel('Active subspace dimension', fontsize=26)
+    ax.tick_params(axis='both', labelsize=32)
+    ax.collections[0].colorbar.ax.tick_params(labelsize=32)
+    plt.xlabel('Degree of the response surface', fontsize=34)
+    plt.ylabel('Active subspace dimension', fontsize=34)
     plt.tight_layout()
 
     plot_path = os.path.join(save_dir, 'subspace_polynomial_heatmap.jpg')
