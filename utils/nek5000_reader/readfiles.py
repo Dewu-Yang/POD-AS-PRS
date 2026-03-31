@@ -1,16 +1,16 @@
 from pymech.neksuite import readnek
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')  # 在导入pyplot之前设置非交互式后端
+matplotlib.use('Agg')  
 import matplotlib.pyplot as plt
 
-# 已成功加载
+
 field = readnek('/mnt/HD4/NekExamples/ext_cyl/ext_cyl0.f00001')
 
-# 访问数据
-print(f"总元素数: {field.nel}")
-print(f"时间步: {field.istep}")
-print(f"物理时间: {field.time}")
+
+print(f"Total elements: {field.nel}")
+print(f"Time step: {field.istep}")
+print(f"Physical time: {field.time}")
 
 print(field)
 
@@ -26,41 +26,32 @@ from fld_data import FldData
 
 f = FldData.fromfile('/mnt/HD4/NekExamples/ext_cyl/ext_cyl0.f00125')
 print(f)
-print(f'流场维度: {f.ndims}')
+print(f'Flow dimension: {f.ndims}')
 
-# print(f'压力：{f.p}')
-print(f'压力维度: {f.p.shape}')
 
-# print(f'速度：{f.u}')
-print(f'速度维度: {f.u.shape}')
+print(f'Pressure dimension: {f.p.shape}')
 
-# 速度的维度是: (1472, 2, 36)，这里的2就是u和v两个分量
-# 绘制速度场的第一个分量
 
-# 保存坐标数据
+print(f'Velocity dimension: {f.u.shape}')
+
+
 import numpy as np
 import os
 
-# 创建保存目录
+
 save_dir = './saved_data'
 os.makedirs(save_dir, exist_ok=True)
 
-# 保存坐标数据
-# coords_file = os.path.join(save_dir, 'coords.npy')
-# np.save(coords_file, f.coords)
-# print(f"Coordinate data saved to: {coords_file}")
 
-# 保存速度数据
 velocity_file = os.path.join(save_dir, 'velocity.npy')
 np.save(velocity_file, f.u)
-print(f"速度数据已保存至: {velocity_file}")
+print(f"velocity saved to: {velocity_file}")
 
-# 保存压力数据
 pressure_file = os.path.join(save_dir, 'pressure.npy')
 np.save(pressure_file, f.p)
-print(f"压力数据已保存至: {pressure_file}")
+print(f"pressure saved to: {pressure_file}")
 
-# 保存元数据 (流场信息)
+
 metadata = {
     'time': f.time,
     'nel': f.nelt,
@@ -69,55 +60,32 @@ metadata = {
     'mesh_limits_y': [-15.0, 15.0]
 }
 np.save(os.path.join(save_dir, 'metadata.npy'), metadata)
-print(f"元数据已保存至: {os.path.join(save_dir, 'metadata.npy')}")
+print(f"metadata saved to: {os.path.join(save_dir, 'metadata.npy')}")
 
 def calculate_drag_coefficient(coords, velocity, pressure, metadata):
     print("[DEBUG] Using calculate_drag_coefficient from readfiles.py")
-    """
-    计算圆柱的阻力系数
     
-    参考了DFG 2D-3基准测试中的公式:
-    C_D = (2/L) * ∫_Γ_S [ν*(∂u_t/∂n)*n_y - p*n_x] ds
-    其中L为特征长度
+    rho = 1.0            
+    nu = 0.01           
+    D = 1.0              
+    U_mean = 1.0         
     
-    参数:
-    coords - 坐标数据
-    velocity - 速度场数据
-    pressure - 压力场数据
-    metadata - 元数据包含必要的信息
-    
-    返回:
-    c_d - 阻力系数
-    """
-    # 参数设置
-    rho = 1.0            # 密度
-    nu = 0.01           # 运动粘度
-    D = 1.0              # 圆柱直径 (假设为1.0)
-    U_mean = 1.0         # 参考速度
-    
-    # 创建圆柱表面的离散点 (减少点数以提高速度)
-    n_points = 150  # 减少点数以加快计算速度
+    n_points = 150  
     theta = np.linspace(0, 2*np.pi, n_points)
-    cylinder_x = 0.5 * np.cos(theta)  # 圆柱半径为0.5
+    cylinder_x = 0.5 * np.cos(theta)  
     cylinder_y = 0.5 * np.sin(theta)
     
-    # 计算每个点的法向量 (指向圆柱外部的单位法向量)
     nx = np.cos(theta)
     ny = np.sin(theta)
     
-    # 使用插值方法
     from scipy.interpolate import LinearNDInterpolator, griddata
     
-    # 展平坐标和场数据以用于插值
     x_coords = coords[:, 0, :].flatten()
     y_coords = coords[:, 1, :].flatten()
     u_component = velocity[:, 0, :].flatten()
     v_component = velocity[:, 1, :].flatten()
     pressure_values = pressure.flatten()
     
-    # 创建圆柱附近的高分辨率网格
-    # 只选择圆柱附近的点，使用更严格的筛选以减少数据点
-    # 选择较小的区域以加快计算速度
     cylinder_vicinity_mask = ((x_coords >= -1.0) & (x_coords <= 1.0) & 
                              (y_coords >= -1.0) & (y_coords <= 1.0))
     
@@ -128,10 +96,8 @@ def calculate_drag_coefficient(coords, velocity, pressure, metadata):
     vicinity_v = v_component[cylinder_vicinity_mask]
     vicinity_p = pressure_values[cylinder_vicinity_mask]
     
-    # 使用快速的LinearNDInterpolator来加速计算
     print(f"Creating fast linear interpolator for cylinder vicinity using {len(vicinity_points)} data points")
 
-    # 直接使用原始数据点建立插值器，不进行异常值过滤以加快速度
     u_interp = LinearNDInterpolator(vicinity_points, vicinity_u)
     v_interp = LinearNDInterpolator(vicinity_points, vicinity_v)
     p_interp = LinearNDInterpolator(vicinity_points, vicinity_p)
@@ -140,58 +106,51 @@ def calculate_drag_coefficient(coords, velocity, pressure, metadata):
     drag_integrand = np.zeros(n_points)
     
     # Set up the second-order finite difference parameters (using a simpler difference method)
-    # 使用最简单的三点差分模式加快计算
-    distances = np.array([0.0, 0.005, 0.01])  # 只使用三个点进行差分
-    # 使用二阶前向差分系数
+    
+    distances = np.array([0.0, 0.005, 0.01])  
     fd_coeffs = np.array([-3, 4, -1]) / (2 * distances[1])
     
     # Precompute the positions of all points for batch interpolation
-    # 准备存储结果的数组
     u_values = np.zeros((n_points, len(distances)))
     v_values = np.zeros((n_points, len(distances)))
     p_values = np.zeros(n_points)
     
-    # 计算表面上的压力和外部点的速度
+    # Calculate surface pressure and external point velocities
     for i in range(n_points):
         x_s = cylinder_x[i]
         y_s = cylinder_y[i]
         
-        # 获取表面点的压力
+        # Get surface point pressure
         p_values[i] = p_interp(x_s, y_s)
         
-        # 计算用于差分的点的速度
+       
         for j, dist in enumerate(distances):
             x_out = x_s + dist * nx[i]
             y_out = y_s + dist * ny[i]
             
-            # 对于表面点(dist=0)，速度为零(no-slip条件)
+      
             if dist == 0:
                 u_values[i, j] = 0.0
                 v_values[i, j] = 0.0
             else:
-                # 对速度使用CloughTocher2D插值
                 u_values[i, j] = u_interp(x_out, y_out)
                 v_values[i, j] = v_interp(x_out, y_out)
     
-    # 简化处理NaN值的方法，加快计算
+    
     if np.isnan(u_values).any() or np.isnan(v_values).any() or np.isnan(p_values).any():
-        print("警告: 插值中发现NaN值，使用最近邻插值修复")
+        print("Warning: NaN values found in interpolation, using nearest neighbor interpolation")
         
-        # 创建坐标点网格用于nearest插值
         pts = np.column_stack((vicinity_x, vicinity_y))
         
-        # 修复NaN值
         for i in range(n_points):
             for j in range(len(distances)):
-                # 对速度中的NaN处理
                 if distances[j] == 0:
-                    # 表面点总是零
                     if np.isnan(u_values[i, j]):
                         u_values[i, j] = 0.0
                     if np.isnan(v_values[i, j]):
                         v_values[i, j] = 0.0
                 else:
-                    # 非表面点的NaN值使用最近邻插值替换
+                    # Non-surface point NaN values use nearest neighbor interpolation
                     x_out = cylinder_x[i] + distances[j] * nx[i]
                     y_out = cylinder_y[i] + distances[j] * ny[i]
                     if np.isnan(u_values[i, j]):
@@ -199,7 +158,7 @@ def calculate_drag_coefficient(coords, velocity, pressure, metadata):
                     if np.isnan(v_values[i, j]):
                         v_values[i, j] = griddata(pts, vicinity_v, np.array([[x_out, y_out]]), method='nearest')[0]
             
-            # 修复压力值
+            # Fix pressure values
             if np.isnan(p_values[i]):
                 x_s = cylinder_x[i]
                 y_s = cylinder_y[i]
@@ -207,41 +166,40 @@ def calculate_drag_coefficient(coords, velocity, pressure, metadata):
     
     # Calculate the drag integrand at each point on the cylinder
     for i in range(n_points):
-        # 切向单位向量
+      
         tx = -ny[i]
         ty = nx[i]
         
-        # 获取表面点处的压力
+    
         p_s = p_values[i]
         
-        # 计算所有点的切向速度分量
+        # Calculate tangential velocity components at all points
         u_t_values = np.zeros(len(distances))
         
-        # 对每个距离点计算切向速度
+        # For each distance point, calculate tangential velocity
         for j in range(len(distances)):
-            # 表面点的速度为零(no-slip条件)
+            # Surface point velocity is zero (no-slip condition)
             if distances[j] == 0:
                 u_t_values[j] = 0.0
             else:
-                # 计算切向速度分量: u_t = u·t = u*tx + v*ty
+                # Calculate tangential velocity component: u_t = u·t = u*tx + v*ty
                 u_t_values[j] = u_values[i, j] * tx + v_values[i, j] * ty
         
-        # 使用四阶有限差分计算法向导数: du_t/dn
+        # Use fourth-order finite difference to calculate normal derivative: du_t/dn
         du_t_dn = np.sum(fd_coeffs * u_t_values)
         
-        # 阻力被积函数: ν*(∂u_t/∂n)*n_y - p*n_x
+        # Drag integrand: ν*(∂u_t/∂n)*n_y - p*n_x
         drag_integrand[i] = nu * du_t_dn * ny[i] - p_s * nx[i]
     
-    # Integrate using the trapezoidal rule (simpler than Simpson's rule and sufficient for accuracy)
-    # 使用简单的梯形法则加快计算
-    ds = 2 * np.pi / n_points  # 角度步长
+
+    ds = 2 * np.pi / n_points  # angle step
     
-    # 简单平滑处理，去除特异值
+    # Simple smoothing to remove outliers
     mean_val = np.mean(drag_integrand)
     std_val = np.std(drag_integrand)
     for i in range(n_points):
         if np.abs(drag_integrand[i] - mean_val) > 2.5 * std_val:
-            # 特异值替换为相邻点平均值
+           
             if i > 0 and i < n_points-1:
                 drag_integrand[i] = (drag_integrand[i-1] + drag_integrand[i+1]) / 2
             elif i == 0:
@@ -249,7 +207,7 @@ def calculate_drag_coefficient(coords, velocity, pressure, metadata):
             else:
                 drag_integrand[i] = (drag_integrand[i-1] + drag_integrand[0]) / 2
     
-    # 使用梯形积分法则
+
     drag_force = 0.5 * np.sum(drag_integrand[:-1] + drag_integrand[1:]) * ds
     
     # Calculate the drag coefficient
@@ -549,13 +507,13 @@ def process_all_field_files(base_pattern='./ext_cyl0.f*', save_dir='./saved_data
                 vorticity[1:-1, 1:-1] = (v_grid[1:-1, 2:] - v_grid[1:-1, :-2]) / (2 * dx) - \
                                        (u_grid[2:, 1:-1] - u_grid[:-2, 1:-1]) / (2 * dy)
                 
-                # 计算速度幅值用于绘图
+             
                 vel_mag_grid = np.sqrt(u_grid**2 + v_grid**2)
                 
-                # 插值压力场
+            
                 p_grid = griddata((x_coords, y_coords), pressure.flatten(), (X, Y), method='linear')
                 
-                # 1. 绘制涡量场
+  
                 plt.figure(figsize=(12, 8))
                 plt.contourf(X, Y, vorticity, levels=50, cmap='RdBu_r', extend='both')
                 plt.colorbar(label='$\\omega$ (Vorticity)')
@@ -566,7 +524,6 @@ def process_all_field_files(base_pattern='./ext_cyl0.f*', save_dir='./saved_data
                 plt.savefig(f'{output_prefix}_vorticity.jpg', dpi=650)
                 plt.close()
                 
-                # 2. 绘制速度幅值场
                 plt.figure(figsize=(12, 8))
                 plt.contourf(X, Y, vel_mag_grid, levels=50, cmap='viridis')
                 plt.colorbar(label='$|\\vec{V}|$ (Velocity Magnitude)')
@@ -577,7 +534,6 @@ def process_all_field_files(base_pattern='./ext_cyl0.f*', save_dir='./saved_data
                 plt.savefig(f'{output_prefix}_velocity.jpg', dpi=650)
                 plt.close()
                 
-                # 3. 绘制压力场
                 plt.figure(figsize=(12, 8))
                 plt.contourf(X, Y, p_grid, levels=50, cmap='coolwarm')
                 plt.colorbar(label='$p$ (Pressure)')
@@ -588,11 +544,9 @@ def process_all_field_files(base_pattern='./ext_cyl0.f*', save_dir='./saved_data
                 plt.savefig(f'{output_prefix}_pressure.jpg', dpi=650)
                 plt.close()
                 
-                # 4. 速度矢量场与涡量场叠加
                 plt.figure(figsize=(12, 8))
                 plt.contourf(X, Y, vorticity, levels=30, cmap='RdBu_r', extend='both')
                 plt.colorbar(label='$\\omega$ (Vorticity)')
-                # 减少矢量箭头密度以提高可视化效果和速度
                 skip = 35
                 plt.quiver(X[::skip, ::skip], Y[::skip, ::skip], 
                            u_grid[::skip, ::skip], v_grid[::skip, ::skip], 
@@ -620,7 +574,7 @@ def process_all_field_files(base_pattern='./ext_cyl0.f*', save_dir='./saved_data
     plt.savefig(os.path.join(save_dir, 'drag_coefficient_vs_time.jpg'), dpi=650)
     plt.close()
     
-    # 保存阻力系数数据
+
     drag_data = np.column_stack((times, drag_coefficients))
     np.savetxt(os.path.join(save_dir, 'drag_coefficient_vs_time.txt'), 
                drag_data, 
@@ -632,10 +586,7 @@ def process_all_field_files(base_pattern='./ext_cyl0.f*', save_dir='./saved_data
     print(f"Drag coefficient data saved to: {os.path.join(save_dir, 'drag_coefficient_vs_time.txt')}")
     print(f"Drag coefficient vs time plot saved to: {os.path.join(save_dir, 'drag_coefficient_vs_time.jpg')}")
 
-# 处理单个文件的情况
-# load_and_visualize()
 
-# 处理所有流场文件
 process_all_field_files(base_pattern='../../YDW/NekExamples/ext_cyl/ext_cyl0.f*')
 
 
