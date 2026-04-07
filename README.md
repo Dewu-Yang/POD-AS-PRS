@@ -136,7 +136,6 @@ ac.utils.plotters.eigenvalues(ss.eigenvals[:20], e_br=ss.e_br[:20], opts=opts)
 
 ```python
 from lib.active_subspaces.utils.rs import PolynomialApproximation
-from sklearn.model_selection import train_test_split
 
 pod_min, pod_max = pod_coeffs.min(0), pod_coeffs.max(0)
 pod_norm = 2.0 * (pod_coeffs - pod_min) / (pod_max - pod_min) - 1.0
