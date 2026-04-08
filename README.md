@@ -16,7 +16,7 @@
 
 This repository provides a clean, modular implementation of the
 **POD-AS-PRS** pipeline for building efficient, interpretable
-surrogates of CFD quantity-of-interest (QoI) functionals directly from
+surrogates of the CFD QoI functionals directly from
 high-fidelity flow-field snapshots.
 
 | Step | Module | Method | Role |
