@@ -1,11 +1,8 @@
-# Legacy code (excluded per project policy)
-legacy/
-
 # Raw simulation data (too large for GitHub, >GB each)
 data/
 
-# Large POD cache files (GB-scale npz)
-results/*/POD/pod_data.npz
+# Large cache files (GB-scale npz)
+results/
 
 # Python
 __pycache__/
@@ -18,3 +15,7 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Environment variables
+.env
+.env.local
