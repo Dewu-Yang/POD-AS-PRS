@@ -1,5 +1,5 @@
 """
-High-level visualisation helpers for the POD-ResNet-AS-PRS workflow.
+High-level visualisation helpers for the POD-AS-PRS workflow.
 
 Functions
 ---------
@@ -39,26 +39,7 @@ mpl.rcParams['axes.unicode_minus'] = False
 
 def plot_eigenvectors_weighted(eigenvecs, eigenvals, num_pod_coeffs,
                                 save_dir='./results/eigenvectors', top_n=None):
-    """Plot the eigenvalue-weighted combination of the two leading eigenvectors.
-
-    Parameters
-    ----------
-    eigenvecs : ndarray
-        m-by-k matrix of eigenvectors (columns).
-    eigenvals : ndarray
-        k-by-1 vector of corresponding eigenvalues.
-    num_pod_coeffs : int
-        Number of POD modes used (for labelling the output file).
-    save_dir : str
-        Directory for saving the figure.
-    top_n : int, optional
-        If given, display only the first ``top_n`` components.
-
-    Returns
-    -------
-    ndarray
-        The (possibly truncated) weighted eigenvector.
-    """
+    
     from lib.active_subspaces.utils.plotters import plot_opts, show_plot
 
     os.makedirs(save_dir, exist_ok=True)
@@ -122,24 +103,7 @@ def plot_eigenvectors_weighted(eigenvecs, eigenvals, num_pod_coeffs,
 
 def plot_pod_importance(num_pod_coeffs, pod_importance,
                         save_dir='./results/Importance', top_n=None):
-    """Horizontal bar chart of POD mode importance scores ranked by contribution.
-
-    Parameters
-    ----------
-    num_pod_coeffs : int
-        Total number of POD modes considered.
-    pod_importance : ndarray
-        Un-sorted array of importance scores, one per POD mode.
-    save_dir : str
-        Directory for saving the figure.
-    top_n : int, optional
-        If given, display only the ``top_n`` most important modes.
-
-    Returns
-    -------
-    str
-        Path to the saved figure.
-    """
+    
     os.makedirs(save_dir, exist_ok=True)
 
     sorted_indices = np.argsort(pod_importance)[::-1]
@@ -197,26 +161,7 @@ def plot_pod_importance(num_pod_coeffs, pod_importance,
 def plot_polynomial_cv(n_values, r2_values, rmse_values, best_n,
                         best_score, best_rmse,
                         save_dir='./results/Polynomial_CV'):
-    """Two-panel plot of polynomial order cross-validation results.
-
-    Parameters
-    ----------
-    n_values : list of int
-        Polynomial orders tested.
-    r2_values, rmse_values : list of float
-        Corresponding test-set R² and RMSE values.
-    best_n : int
-        Polynomial order with the best validation score.
-    best_score, best_rmse : float
-        Best R² and RMSE.
-    save_dir : str
-        Directory for saving the figure.
-
-    Returns
-    -------
-    str
-        Path to the saved figure.
-    """
+    
     os.makedirs(save_dir, exist_ok=True)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
@@ -258,26 +203,7 @@ def plot_polynomial_cv(n_values, r2_values, rmse_values, best_n,
 
 
 def plot_response_surface_2d(xx, yy, zz, y, f, results_dir='./results'):
-    """3-D surface and 2-D contour plots of a 2-D polynomial response surface.
-
-    Parameters
-    ----------
-    xx, yy : ndarray
-        2-D meshgrid arrays for the two active variables.
-    zz : ndarray
-        Response surface values on the meshgrid.
-    y : ndarray, shape (N, 2)
-        Active-variable coordinates of the training samples.
-    f : ndarray, shape (N,)
-        Corresponding QoI values.
-    results_dir : str
-        Directory for saving the figures.
-
-    Returns
-    -------
-    str, str
-        Paths to the 3-D surface figure and the 2-D contour figure.
-    """
+    
     os.makedirs(results_dir, exist_ok=True)
 
     fig = plt.figure(figsize=(8, 6), constrained_layout=True)
@@ -320,28 +246,7 @@ def plot_response_surface_2d(xx, yy, zz, y, f, results_dir='./results'):
 
 def validate_response_surface(model, X_test, y_test_true,
                                save_dir='./results/RS_Validation'):
-    """Evaluate a polynomial response-surface model on a held-out test set.
-
-    Produces a true-vs-predicted scatter plot, a residual plot, and (when the
-    input has two columns) a 2-D spatial residual map.
-
-    Parameters
-    ----------
-    model : object
-        Response surface model with a ``predict(X)`` method returning
-        ``(y_pred, …)``.
-    X_test : ndarray, shape (N, d)
-        Test-set active-variable coordinates.
-    y_test_true : ndarray, shape (N,)
-        Ground-truth QoI values.
-    save_dir : str
-        Directory for saving figures and the metrics text file.
-
-    Returns
-    -------
-    dict
-        Dictionary with keys ``'r2'``, ``'rmse'``, ``'mae'``.
-    """
+   
     os.makedirs(save_dir, exist_ok=True)
 
     y_test_pred = model.predict(X_test)[0]
@@ -428,45 +333,7 @@ def compare_rom_fom_predictions(X, y_true, model,
                                  scatter_ylim=None,
                                  split_idx=None,
                                  save_dir='./results/ROM_FOM_Comparison'):
-    """Compare ROM (response surface) and FOM (simulation) predictions.
-
-    Parameters
-    ----------
-    X : ndarray, shape (N, d)
-        Active-variable coordinates for all samples.
-    y_true : ndarray, shape (N,)
-        Ground-truth QoI values from the full-order model.
-    model : object
-        Response surface with a ``predict(X)`` method.
-    t_start : float
-        Physical start time (Cylinder only).
-    dt : float
-        Time step between consecutive samples.
-    qoi_label : str
-        LaTeX label for the QoI axis (e.g. ``'$C_l$'``).
-    geometry : str
-        ``'naca4412'`` – combined time-window+PDF figure and combined
-        scatter+residuals figure (matches legacy Example2_NACA4412).
-        ``'cylinder'`` – full time-series, separate scatter and residuals
-        (matches legacy Example1_Cylinder).
-    total_start_time : float
-        Physical start time of the full dataset (NACA4412 = 600).
-    plot_start_time : float
-        Start of the displayed time window (NACA4412 = 750).
-    plot_end_time : float
-        End of the displayed time window (NACA4412 = 800).
-    scatter_xlim : tuple, optional
-        (xmin, xmax) for scatter/residuals axes. Auto-computed if None.
-    scatter_ylim : tuple, optional
-        (ymin, ymax) for scatter y-axis. Defaults to ``scatter_xlim``.
-    save_dir : str
-        Directory for saving figures.
-
-    Returns
-    -------
-    dict
-        Dictionary with keys ``'r2'``, ``'rmse'``, ``'mae'``.
-    """
+    
     os.makedirs(save_dir, exist_ok=True)
 
     y_pred = model.predict(X)[0].flatten()
@@ -740,35 +607,7 @@ def compare_rom_fom_predictions(X, y_true, model,
 def plot_subspace_polynomial_heatmap(XX_as, f, eigenvecs,
                                       n_dim_range=10, n_poly_range=10,
                                       save_dir='./results/Heatmap'):
-    """R² heatmap over active-subspace dimension × polynomial order.
-
-    For each (subspace dimension, polynomial order) pair the function trains a
-    polynomial response surface on the first 80 % of samples (chronological
-    split) and evaluates R² on the remaining 20 %.  Results are shown as a
-    seaborn heatmap.
-
-    Parameters
-    ----------
-    XX_as : ndarray, shape (N, d)
-        Normalised POD coefficient inputs (already mapped to [-1, 1]).
-    f : ndarray, shape (N, 1) or (N,)
-        Target QoI values.
-    eigenvecs : ndarray, shape (d, k)
-        AS eigenvector matrix (rows = input dimensions, columns = AS directions).
-    n_dim_range : int
-        Maximum subspace dimension to test (1 … n_dim_range).
-    n_poly_range : int
-        Maximum polynomial order to test (1 … n_poly_range).
-    save_dir : str
-        Directory for saving the figure.
-
-    Returns
-    -------
-    str
-        Path to the saved heatmap figure.
-    dict
-        ``{'r2_matrix': ndarray}`` with shape ``(n_dim_range, n_poly_range)``.
-    """
+   
     import seaborn as sns
     from math import comb
     from sklearn.metrics import r2_score
@@ -831,41 +670,7 @@ def plot_subspace_polynomial_heatmap(XX_as, f, eigenvecs,
 def plot_interaction_heatmap(W, eigenvals, pod_importance, n_active,
                              top_n=6, save_dir='./results/Activity_Score',
                              use_scientific_colorbar=False, cbar_formula=None):
-    """Lower-triangle modal interaction heatmap weighted by AS eigenvalues.
-
-    Computes the interaction matrix
-    ``M = sum_{i=1}^{n_active} lambda_i * w_i * w_i^T``
-    and displays its top-left ``top_n × top_n`` sub-block as a lower-triangle
-    colour map with manually drawn cell borders — matching the style of
-    legacy ``main.py`` exactly.
-
-    Parameters
-    ----------
-    W : ndarray, shape (num_pod_coeffs, num_pod_coeffs)
-        Full AS eigenvector matrix (columns = directions).
-    eigenvals : ndarray, shape (num_pod_coeffs, 1)
-        Corresponding eigenvalues.
-    pod_importance : ndarray, shape (num_pod_coeffs,)
-        Normalised POD mode importance scores (used for tick labels).
-    n_active : int
-        Number of active AS directions to include in the sum.
-    top_n : int
-        Size of the sub-block to display (default 6).
-    save_dir : str
-        Directory for saving the figure.
-    use_scientific_colorbar : bool
-        If True, format colorbar ticks with scientific notation and move the
-        power-of-ten offset label to the top of the colorbar — matches the
-        NACA 4412 legacy style (default False).
-    cbar_formula : str or None
-        LaTeX string to annotate beside the colorbar.  Defaults to the
-        Case 1 formula with hats when None.
-
-    Returns
-    -------
-    str
-        Path to the saved figure.
-    """
+   
     import seaborn as sns
 
     os.makedirs(save_dir, exist_ok=True)
@@ -963,9 +768,6 @@ def plot_interaction_heatmap(W, eigenvals, pod_importance, n_active,
     return figname
 
 
-# ---------------------------------------------------------------------------
-# POD visualisation helpers
-# ---------------------------------------------------------------------------
 
 def _get_cylinder_boundary(radius=0.5, center=(0, 0), n_points=100):
     """Return (x, y) arrays for the cylinder boundary circle."""
@@ -1016,20 +818,7 @@ def _get_wing_boundary(alpha=5, n_points=50):
 
 def plot_pod_energy(Ds, num_modes=20, save_dir='./results/POD',
                     geometry='cylinder'):
-    """Plot POD modal energy and cumulative energy on a dual-axis figure.
-
-    Parameters
-    ----------
-    Ds : ndarray
-        Eigenvalues (energy spectrum) from POD.
-    num_modes : int
-        Number of modes to display (default 20; use ``len(Ds)`` for all).
-    save_dir : str
-        Directory for saving output files.
-    geometry : str
-        ``'cylinder'`` or ``'naca4412'``.  Controls axis scaling and
-        percentage conventions to match the respective legacy scripts.
-    """
+   
     import matplotlib.ticker as ticker
 
     os.makedirs(save_dir, exist_ok=True)
@@ -1137,24 +926,7 @@ def plot_pod_energy(Ds, num_modes=20, save_dir='./results/POD',
 
 def plot_eigenvalues(S, num_values=20, save_dir='./results/POD', log_scale=True,
                      geometry='naca4412'):
-    """Plot POD singular value spectrum.
-
-    Parameters
-    ----------
-    S : ndarray
-        Singular values from POD.
-    num_values : int
-        Number of values to display.
-    save_dir : str
-        Directory for saving output files.
-    log_scale : bool
-        If True (default), use log axes.
-    geometry : str
-        ``'cylinder'`` – semilogy, separate line+markers, LaTeX labels,
-        x-tick every 2 (matches legacy Example1_Cylinder/visualize_pod.py).
-        ``'naca4412'`` – full log-log, combined ``'ko-'``, plain labels
-        (matches legacy Example2_NACA4412/visualize_pod.py).
-    """
+   
     from matplotlib.ticker import MultipleLocator
 
     os.makedirs(save_dir, exist_ok=True)
@@ -1218,27 +990,7 @@ def plot_eigenvalues(S, num_values=20, save_dir='./results/POD', log_scale=True,
 def plot_pod_modes_and_coeffs(PhiU, An, original_shape, x_grid, y_grid,
                                num_modes=6, geometry='cylinder',
                                region_mask=None, save_dir='./results/POD'):
-    """Plot POD spatial modes (left column) and temporal coefficients (right column).
-
-    Parameters
-    ----------
-    PhiU : ndarray, shape (n_spatial, n_modes)
-        Spatial mode matrix.
-    An : ndarray, shape (N, n_modes)
-        Temporal coefficient matrix.
-    original_shape : tuple
-        (ny, nx) 2-D shape of the full vorticity grid.
-    x_grid, y_grid : ndarray
-        1-D coordinate arrays for the full spatial grid.
-    num_modes : int
-        Number of modes to display (default 6 for cylinder, 10 for NACA).
-    geometry : str
-        ``'cylinder'`` or ``'naca4412'``.
-    region_mask : ndarray or None
-        Boolean mask used to filter spatial points (NACA only).
-    save_dir : str
-        Directory for saving output files.
-    """
+   
     from mpl_toolkits.axes_grid1 import make_axes_locatable
     from matplotlib.ticker import MaxNLocator
     import matplotlib.gridspec as gridspec
@@ -1347,20 +1099,7 @@ def plot_pod_modes_and_coeffs(PhiU, An, original_shape, x_grid, y_grid,
 
 
 def plot_pod_phase_space_triangle(An, num_modes=6, save_dir='./results/POD',
-                                   geometry='cylinder'):
-    """Lower-triangular phase-portrait matrix with diagonal KDE histograms.
-
-    Parameters
-    ----------
-    An : ndarray, shape (N, n_modes)
-        Temporal coefficient matrix.
-    num_modes : int
-        Number of leading modes to include.
-    save_dir : str
-        Directory for saving output files.
-    geometry : str
-        ``'cylinder'`` or ``'naca4412'``.
-    """
+   
     from scipy.stats import gaussian_kde
     import matplotlib.gridspec as gridspec
     from matplotlib.ticker import MaxNLocator
@@ -1427,26 +1166,7 @@ def plot_pod_phase_space_triangle(An, num_modes=6, save_dir='./results/POD',
 def plot_mesh_and_vorticity(flow_data_path, geometry='cylinder',
                              nek_data_path=None, snapshot_idx=10,
                              save_dir='./results/Mesh'):
-    """Plot the computational mesh (left) and a vorticity snapshot (right).
-
-    The left panel requires raw Nek5000 field files (via *nek_data_path*) and
-    the ``pymech`` library.  If unavailable the panel is skipped gracefully.
-    The right panel always uses the pre-computed ``flow_field_data.npz``.
-
-    Parameters
-    ----------
-    flow_data_path : str
-        Path to ``flow_field_data.npz``.
-    geometry : str
-        ``'cylinder'`` or ``'naca4412'``.
-    nek_data_path : str or None
-        Path to the first Nek5000 snapshot file used for mesh extraction.
-        If *None* or the file does not exist the mesh panel is omitted.
-    snapshot_idx : int
-        Index of the vorticity snapshot to display (default 10).
-    save_dir : str
-        Directory for saving output files.
-    """
+    
     from scipy.interpolate import RegularGridInterpolator
 
     os.makedirs(save_dir, exist_ok=True)
@@ -1559,29 +1279,7 @@ def plot_mesh_and_vorticity(flow_data_path, geometry='cylinder',
 def plot_qoi(qoi_data_path, qoi_label='$C_d$',
              time_label=r'$t$ /($DU_\infty^{-1}$)',
              save_dir='./results/QoI'):
-    """Plot the raw QoI time series and its standardised smooth surrogate.
-
-    Reproduces the two-panel layout of the legacy ``plot_qoi.py``:
-
-    * Top panel   – raw QoI with ±2σ bounds.
-    * Bottom panel – Gaussian-smoothed, zero-mean, unit-variance signal *q*
-      with ±2σ bounds (matching the legacy style exactly, including the
-      asymmetric bound line on the lower plot).
-
-    The Gaussian smoothing bandwidth is derived from the dominant FFT
-    frequency, consistent with the legacy implementation.
-
-    Parameters
-    ----------
-    qoi_data_path : str
-        Two-column (time, value) ``.dat`` or ``.npy`` file.
-    qoi_label : str
-        LaTeX y-axis label for the raw QoI (e.g. ``'$C_d$'``).
-    time_label : str
-        LaTeX x-axis label for the time axis.
-    save_dir : str
-        Directory for saving output files.
-    """
+    
     from scipy.ndimage import gaussian_filter1d
 
     os.makedirs(save_dir, exist_ok=True)
