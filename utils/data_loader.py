@@ -101,6 +101,18 @@ def _load_vorticity(flow_data_path, apply_region_filter, pod_save_dir):
     -------
     U0x, An, PhiU, Ds, S
     """
+    pod_data_file = os.path.join(pod_save_dir, 'pod_data.npz')
+    if os.path.exists(pod_data_file):
+        print(f"Found cached POD data — skipping flow field load: {pod_data_file}")
+        pod_data = np.load(pod_data_file)
+        return (
+            pod_data['U_mean'],
+            pod_data['An'],
+            pod_data['Phi'],
+            pod_data['Ds'],
+            pod_data['S'],
+        )
+
     print("\nLoading flow field data...")
     flow_data = np.load(flow_data_path)
     print("Flow data keys:", list(flow_data.keys()))
