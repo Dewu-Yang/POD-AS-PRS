@@ -1,5 +1,5 @@
 """
-High-level visualisation helpers for the POD-AS-PRS workflow.
+High-level visualisation helpers for the POD-ResNet-AS-PRS workflow.
 
 Functions
 ---------
@@ -735,6 +735,7 @@ def compare_rom_fom_predictions(X, y_true, model,
     print(f"Performance metrics saved to: {performance_file}")
 
     return {'r2': r2, 'rmse': rmse, 'mae': mae}
+
 
 def plot_subspace_polynomial_heatmap(XX_as, f, eigenvecs,
                                       n_dim_range=10, n_poly_range=10,
