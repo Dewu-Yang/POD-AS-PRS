@@ -22,49 +22,14 @@ from scipy.interpolate import LinearNDInterpolator
 
 
 def extract_number(filename):
-    """Extract the numeric time-step index from a Nek5000 field filename.
-
-    Parameters
-    ----------
-    filename : str
-        E.g. ``'ext_cylf00100.fld'``.
-
-    Returns
-    -------
-    int
-    """
+   
     match = re.search(r'f(\d+)', filename)
     return int(match.group(1)) if match else 0
 
 
 def compute_vorticity_field(coords, velocity, resolution=(100, 100),
                              geometry='none'):
-    """Interpolate velocity onto a regular grid and compute the vorticity.
-
-    The vorticity is approximated via second-order central differences on the
-    regular grid after interpolation.
-
-    Parameters
-    ----------
-    coords : ndarray, shape (n_elements, 2, n_points)
-        Physical coordinates for each element and quadrature point.
-    velocity : ndarray, shape (n_elements, 2, n_points)
-        Velocity components (u, v) at the same locations.
-    resolution : tuple of int
-        Grid resolution ``(nx, ny)`` for the regular output grid (default
-        ``(100, 100)``).
-    geometry : str
-        Geometry-specific masking strategy.
-        - ``'none'`` – no masking applied.
-        - ``'cylinder'`` – mask out the circular cylinder interior.
-
-    Returns
-    -------
-    vort : ndarray, shape (ny, nx)
-        Vorticity field on the regular grid (NaN outside interpolation hull).
-    x_grid : ndarray, shape (nx,)
-    y_grid : ndarray, shape (ny,)
-    """
+   
     x_flat = coords[:, 0, :].flatten()
     y_flat = coords[:, 1, :].flatten()
     u_flat = velocity[:, 0, :].flatten()
@@ -105,31 +70,7 @@ def merge_flow_fields(
     max_files=None,
     reader_dir=None,
 ):
-    """Merge Nek5000 field files into a single vorticity snapshot archive.
-
-    Parameters
-    ----------
-    data_dir : str
-        Directory containing the Nek5000 ``.fld`` files.
-    output_path : str
-        Destination path for the merged ``flow_field_data.npz`` archive.
-    file_pattern : str
-        Glob pattern for selecting field files (default ``'*.fld'``).
-    resolution : tuple of int
-        Interpolation grid resolution ``(nx, ny)`` (default ``(100, 100)``).
-    geometry : str
-        Geometry mask: ``'none'`` or ``'cylinder'`` (default ``'none'``).
-    max_files : int, optional
-        Maximum number of files to process (default None = all).
-    reader_dir : str, optional
-        Directory containing the Nek5000 reader package.  When None, the
-        ``utils/nek5000_reader`` sibling directory is added automatically.
-
-    Returns
-    -------
-    str
-        Absolute path to the saved archive.
-    """
+  
     if reader_dir is None:
         reader_dir = os.path.join(os.path.dirname(__file__), 'nek5000_reader')
     if reader_dir not in sys.path:
@@ -194,15 +135,7 @@ def merge_flow_fields(
 
 
 def plot_time_distribution(time_stamps, save_path=None):
-    """Plot the histogram of snapshot time steps.
-
-    Parameters
-    ----------
-    time_stamps : array-like
-        Physical time of each snapshot.
-    save_path : str, optional
-        If given, save the figure to this path.
-    """
+   
     plt.figure(figsize=(10, 4))
     plt.plot(np.arange(len(time_stamps)), time_stamps, 'k-', linewidth=1.5)
     plt.xlabel('Snapshot index', fontsize=14)
