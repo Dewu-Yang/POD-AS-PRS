@@ -18,13 +18,7 @@ from torch.utils.data import TensorDataset, DataLoader
 
 
 def set_random_seed(seed=42):
-    """Fix all random-number generators for reproducibility.
 
-    Parameters
-    ----------
-    seed : int
-        Random seed value (default 42).
-    """
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -36,24 +30,7 @@ def set_random_seed(seed=42):
 
 
 def _run_pod(vort_reshaped, pod_save_dir, flow_data):
-    """Run POD decomposition and cache the result.
-
-    If a cached ``pod_data.npz`` file already exists in *pod_save_dir*, it is
-    loaded instead of recomputing.
-
-    Parameters
-    ----------
-    vort_reshaped : ndarray, shape (N, n_spatial)
-        Snapshot matrix of vorticity values.
-    pod_save_dir : str
-        Directory for reading/writing the cache file.
-    flow_data : NpzFile
-        The original loaded flow data (used to save grid metadata).
-
-    Returns
-    -------
-    U0x, An, PhiU, Ds, S
-    """
+  
     from core.pod_engine import POD_SVD
 
     os.makedirs(pod_save_dir, exist_ok=True)
@@ -85,22 +62,7 @@ def _run_pod(vort_reshaped, pod_save_dir, flow_data):
 
 
 def _load_vorticity(flow_data_path, apply_region_filter, pod_save_dir):
-    """Load vorticity snapshots, optionally applying a spatial-region mask.
-
-    Parameters
-    ----------
-    flow_data_path : str
-        Path to the ``flow_field_data.npz`` archive.
-    apply_region_filter : bool
-        If True, apply a spatial mask to retain only the region of interest
-        (NACA 4412 style).  If False, use all spatial points (Cylinder style).
-    pod_save_dir : str
-        Directory for caching the POD decomposition.
-
-    Returns
-    -------
-    U0x, An, PhiU, Ds, S
-    """
+    
     pod_data_file = os.path.join(pod_save_dir, 'pod_data.npz')
     if os.path.exists(pod_data_file):
         print(f"Found cached POD data — skipping flow field load: {pod_data_file}")
@@ -167,49 +129,7 @@ def load_and_preprocess_data(
     apply_region_filter=False,
     pod_save_dir='./results/POD',
 ):
-    """Load flow snapshots and QoI, run POD, normalise, and build DataLoaders.
-
-    Parameters
-    ----------
-    flow_data_path : str
-        Path to ``flow_field_data.npz`` containing the vorticity snapshots.
-    qoi_data_path : str
-        Path to the scalar QoI file.  ``.dat`` (two columns: time, value)
-        and ``.npy`` (shape (N, 2)) are both supported.
-    num_pod_coeffs : int
-        Number of leading POD modes to use as input features (default 100).
-    train_ratio : float
-        Fraction of samples for training (default 0.8).
-    val_ratio : float
-        Fraction of samples for validation (default 0.1).
-    batch_size : int
-        DataLoader batch size (default 32).
-    seed : int
-        Random seed for reproducibility (default 42).
-    shuffle_train : bool
-        Whether to shuffle the training DataLoader (default True).
-    apply_region_filter : bool
-        If True, apply spatial-region filtering before POD (default False).
-        Set True for NACA 4412; leave False for cylinder flow.
-    pod_save_dir : str
-        Directory for caching POD decomposition results.
-
-    Returns
-    -------
-    train_loader, val_loader, test_loader : DataLoader
-    pod_coeffs : ndarray
-        Raw (un-normalised) POD coefficient matrix, shape (N, num_pod_coeffs).
-    pod_coeffs_norm : ndarray
-        Normalised POD coefficient matrix (same shape).
-    pod_mean, pod_std : ndarray
-        Training-set statistics for POD coefficients.
-    qoi_mean, qoi_std : float
-        Training-set statistics for the QoI.
-    pod_min, pod_max : ndarray
-        Per-feature min/max of the training set POD coefficients.
-    qoi_min, qoi_max : float
-        Min/max QoI value in the training set.
-    """
+   
     set_random_seed(seed)
 
     # ---------- POD decomposition ----------
@@ -295,30 +215,7 @@ def load_and_preprocess_data(
 
 
 def load_pod_vis_data(pod_save_dir, flow_data_path, apply_region_filter=False):
-    """Load the cached POD decomposition for visualisation purposes.
-
-    Parameters
-    ----------
-    pod_save_dir : str
-        Directory that contains ``pod_data.npz`` (and optionally
-        ``region_mask.npy``) created by :func:`load_and_preprocess_data`.
-    flow_data_path : str
-        Path to ``flow_field_data.npz`` — used to recover the full grid shape.
-    apply_region_filter : bool
-        Must match the value used when the POD was computed (default False).
-
-    Returns
-    -------
-    dict with keys
-        ``PhiU``          – spatial modes, shape (n_spatial, n_modes)
-        ``An``            – temporal coefficients, shape (N, n_modes)
-        ``Ds``            – eigenvalues (energy spectrum), shape (n_modes,)
-        ``S``             – singular values, shape (n_modes,)
-        ``x_grid``        – 1-D x-coordinates of the vorticity grid
-        ``y_grid``        – 1-D y-coordinates of the vorticity grid
-        ``original_shape``– (ny, nx) 2-D shape of the full spatial grid
-        ``region_mask``   – boolean mask used for spatial filtering, or None
-    """
+    
     pod_data_file = os.path.join(pod_save_dir, 'pod_data.npz')
     if not os.path.exists(pod_data_file):
         raise FileNotFoundError(
@@ -355,15 +252,5 @@ def load_pod_vis_data(pod_save_dir, flow_data_path, apply_region_filter=False):
 
 
 def denormalise(values, mean, std):
-    """Reverse a Z-score normalisation.
 
-    Parameters
-    ----------
-    values : ndarray or float
-    mean, std : float
-
-    Returns
-    -------
-    ndarray or float
-    """
     return values * std + mean
