@@ -533,7 +533,7 @@ def compare_rom_fom_predictions(X, y_true, model,
                 ax_p.set_yscale('log')
                 ax_p.set_xlim([0, 3])
                 ax_p.set_ylabel(r'$\rho$', fontsize=20)
-                ax_p.tick_params(labelsize=18)
+                ax_p.tick_params(labelsize=24)
                 # if add_leg:
                 #     leg2 = ax_p.legend(prop={'size': 20}, frameon=False)
                 #     leg2.get_frame().set_linewidth(0)
@@ -735,7 +735,6 @@ def compare_rom_fom_predictions(X, y_true, model,
     print(f"Performance metrics saved to: {performance_file}")
 
     return {'r2': r2, 'rmse': rmse, 'mae': mae}
-
 
 def plot_subspace_polynomial_heatmap(XX_as, f, eigenvecs,
                                       n_dim_range=10, n_poly_range=10,
