@@ -176,7 +176,7 @@ If you use this code in your research, please cite:
 @article{XXXX2026,
   title   = {Identifying sensitivity-dominant parameters via active subspaces in reduced-order modeling of fluid dynamics},
   author  = {Yang, D., Wang R., Lai, P., Wang, J., Wang, F., Xu, H.},
-  journal = {Journal Name},
+  journal = {Nonlinear Dynamics},
   year    = {2026},
   doi     = {xx.xxxx/xxxxxx}
 }
