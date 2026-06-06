@@ -173,12 +173,11 @@ Original repository: <https://github.com/paulcon/active_subspaces>
 If you use this code in your research, please cite:
 
 ```bibtex
-@article{XXXX2026,
-  title   = {Identifying sensitivity-dominant parameters via active subspaces in reduced-order modeling of fluid dynamics},
-  author  = {Yang, D., Wang R., Lai, P., Wang, J., Wang, F., Xu, H.},
-  journal = {Nonlinear Dynamics},
-  year    = {2026},
-  doi     = {xx.xxxx/xxxxxx}
+@article{yang2026identifying,
+  title={Identifying sensitivity-dominant parameters via active subspaces in reduced-order modeling of fluid dynamics},
+  author={Yang, Dewu and Wang, Rui and Lai, Pengyu and Wang, Junjie and Wang, Feng and Xu, Hui},
+  journal={arXiv preprint arXiv:2606.02315},
+  year={2026}
 }
 ```
 
