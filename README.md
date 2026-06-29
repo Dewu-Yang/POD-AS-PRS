@@ -174,7 +174,7 @@ If you use this code in your research, please cite:
 
 ```bibtex
 @article{yang2026identifying,
-  title={Identifying sensitivity-dominant parameters via active subspaces in reduced-order modeling of fluid dynamics.},
+  title={Identifying sensitivity-dominant parameters via active subspaces in reduced-order modeling of fluid dynamics},
   author={Yang, Dewu and Wang, Rui and Lai, Pengyu and Wang, Junjie and Wang, Feng and Xu, Hui},
   journal={Nonlinear Dynamics},
   volume={114},
