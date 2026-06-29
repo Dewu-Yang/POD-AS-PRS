@@ -174,10 +174,14 @@ If you use this code in your research, please cite:
 
 ```bibtex
 @article{yang2026identifying,
-  title={Identifying sensitivity-dominant parameters via active subspaces in reduced-order modeling of fluid dynamics},
+  title={Identifying sensitivity-dominant parameters via active subspaces in reduced-order modeling of fluid dynamics: D. Yang et al.},
   author={Yang, Dewu and Wang, Rui and Lai, Pengyu and Wang, Junjie and Wang, Feng and Xu, Hui},
-  journal={arXiv preprint arXiv:2606.02315},
-  year={2026}
+  journal={Nonlinear Dynamics},
+  volume={114},
+  number={12},
+  pages={847},
+  year={2026},
+  publisher={Springer}
 }
 ```
 
